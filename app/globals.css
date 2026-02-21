@@ -7,9 +7,15 @@
   --background: #ffffff;
   --foreground: #171717;
   
-  /* CARD DIMENSIONS (Standard CR80) */
-  --card-width: 2.625in;
-  --card-height: 3.875in;
+  /* CARD DIMENSIONS (Standard CR80 Portrait)
+     Actual: 2.125in × 3.375in
+     Using fixed pixels (96 DPI) for consistent screen preview */
+  --card-width: 204px;   /* 2.125in × 96 = 204px */
+  --card-height: 324px;  /* 3.375in × 96 = 324px */
+  
+  /* Print dimensions with ~8% compensation for browser/printer shrinkage */
+  --card-width-print: 2.30in;   /* 2.125 × 1.08 */
+  --card-height-print: 3.65in;  /* 3.375 × 1.08 */
 }
 
 body {
@@ -21,7 +27,7 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   2. CARD CLASS
+   2. CARD CLASS (Screen Preview - uses pixels)
    ═══════════════════════════════════════════════════════════ */
 .id-card {
   width: var(--card-width);
@@ -45,33 +51,57 @@ body {
 @media print {
   @page {
     size: A4 landscape;
-    margin: 0; /* Zero margin to let Flexbox handle centering */
+    margin: 0 !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 11.69in;
+    height: 8.27in;
+    overflow: hidden;
+    background: white;
   }
 
   .print\:hidden {
     display: none !important;
   }
 
-  body {
-    margin: 0;
-    padding: 0;
-    background: white;
+  /* OVERRIDE CARD DIMENSIONS FOR PRINT */
+  .id-card {
+    width: var(--card-width-print) !important;
+    height: var(--card-height-print) !important;
+    min-width: var(--card-width-print) !important;
+    max-width: var(--card-width-print) !important;
+    min-height: var(--card-height-print) !important;
+    max-height: var(--card-height-print) !important;
+    border: 1px dashed #cccccc !important;
+    box-shadow: none !important;
   }
 
   /* THE CONTAINER */
   .a4-print-container {
     width: 11.69in;
     height: 8.27in;
-    position: relative;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: absolute;
+    top: 0;
+    left: 0;
     overflow: hidden; 
     
     display: grid !important;
-    grid-template-columns: repeat(4, var(--card-width));
-    grid-template-rows: repeat(2, var(--card-height));
+    grid-template-columns: repeat(4, var(--card-width-print));
+    grid-template-rows: repeat(2, var(--card-height-print));
     
     /* GAPS for cutting */
-    column-gap: 0.15in; 
-    row-gap: 0.1in;
+    column-gap: 0.1in; 
+    row-gap: 0.08in;
     
     justify-content: center;
     align-content: center;
@@ -91,13 +121,5 @@ body {
     justify-content: center;
     align-items: center;
     page-break-inside: avoid;
-  }
-
-  /* Print Borders */
-  .id-card {
-    border: 1px dashed #cccccc !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    box-shadow: none !important;
   }
 }

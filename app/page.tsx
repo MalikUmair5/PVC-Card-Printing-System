@@ -106,10 +106,10 @@ const CardBackground = ({ children }: { children: React.ReactNode }) => (
 const IdCardFront = ({ student }: { student: StudentData }) => (
   <CardBackground>
     {/* Header */}
-    <div className="mt-6 px-1 text-center relative z-20">
+    <div className="mt-4 px-1 text-center relative z-20">
       <ResponsiveText 
-        maxSize={18} 
-        minSize={14} 
+        maxSize={16} 
+        minSize={12} 
         className="leading-tight font-extrabold text-[#0e6a2e] italic drop-shadow-sm" 
         style={{ fontFamily: "serif" }}
       >
@@ -118,36 +118,36 @@ const IdCardFront = ({ student }: { student: StudentData }) => (
     </div>
 
     {/* Photo */}
-    <div className="flex flex-col items-center mt-4">
-      <div className="w-[100px] h-[100px] rounded-full border-[4px] border-[#1a7a30] bg-white shadow-md overflow-hidden relative z-20">
-        {student.photo ? <img src={student.photo} className="w-full h-full object-cover" alt="Student" /> : <div className="text-5xl mt-5 text-center text-gray-300">👤</div>}
+    <div className="flex flex-col items-center mt-2">
+      <div className="w-[80px] h-[80px] rounded-full border-[3px] border-[#1a7a30] bg-white shadow-md overflow-hidden relative z-20">
+        {student.photo ? <img src={student.photo} className="w-full h-full object-cover" alt="Student" /> : <div className="text-4xl mt-4 text-center text-gray-300">👤</div>}
       </div>
-      <div className="relative -mt-3 z-30 px-5 py-0.5 rounded-full font-bold text-[10px] text-white bg-[#0e6a2e] border-2 border-white shadow-sm tracking-wider">
+      <div className="relative -mt-2.5 z-30 px-4 py-0.5 rounded-full font-bold text-[8px] text-white bg-[#0e6a2e] border-2 border-white shadow-sm tracking-wider">
         STUDENT ID CARD
       </div>
     </div>
 
-    {/* Student Details - Clearer & Bolder */}
-    <div className="flex-1 px-5 mt-5 space-y-2 text-[12px] font-bold text-gray-900 relative z-20">
+    {/* Student Details */}
+    <div className="flex-1 px-4 mt-3 space-y-1.5 text-[11px] font-bold text-gray-900 relative z-20">
       {[
         ["Name", student.name], 
         ["Father", student.fatherName], 
         ["Class", student.class], 
         ["GR #", student.grNumber]
       ].map(([label, value]) => (
-        <div key={label} className="flex items-end gap-2 border-b border-gray-600/40 pb-0.5">
-          <span className="whitespace-nowrap w-12 text-[#0e6a2e] font-extrabold">{label}:</span>
+        <div key={label} className="flex items-end gap-1.5 border-b border-gray-600/40 pb-0.5">
+          <span className="whitespace-nowrap w-11 text-[#0e6a2e] font-extrabold text-[10px]">{label}:</span>
           <div className="flex-1">
             {(label === "Name" || label === "Father") ? (
               <ResponsiveText 
-                maxSize={10} 
+                maxSize={9} 
                 minSize={6} 
                 className="font-black text-black uppercase text-left"
               >
                 {value}
               </ResponsiveText>
             ) : (
-              <span className="flex-1 font-black text-black uppercase truncate text-left text-[10px]">{value}</span>
+              <span className="flex-1 font-black text-black uppercase truncate text-left text-[9px]">{value}</span>
             )}
           </div>
         </div>
@@ -155,10 +155,10 @@ const IdCardFront = ({ student }: { student: StudentData }) => (
     </div>
 
     {/* Footer */}
-    <div className="text-center pb-5 pt-2 relative z-20">
+    <div className="text-center pb-3 pt-1 relative z-20">
       <ResponsiveText 
-        maxSize={16} 
-        minSize={12} 
+        maxSize={14} 
+        minSize={10} 
         className="font-black text-[#0e6a2e] tracking-[0.2em] drop-shadow-sm"
       >
         QUAIDIAN
@@ -169,9 +169,9 @@ const IdCardFront = ({ student }: { student: StudentData }) => (
 
 const IdCardBack = () => (
   <CardBackground>
-    {/* Logo Section - Clearer */}
-    <div className="mt-8 flex justify-center relative z-20">
-      <div className="w-28 h-28 flex items-center justify-center">
+    {/* Logo Section */}
+    <div className="mt-4 flex justify-center relative z-20">
+      <div className="w-20 h-20 flex items-center justify-center">
         <img 
           src="/transparent-bg-logo.png" 
           alt="School Logo" 
@@ -181,11 +181,11 @@ const IdCardBack = () => (
     </div>
 
     {/* Address Section */}
-    <div className="flex-1 flex flex-col items-center text-center px-4 mt-2 space-y-3 relative z-20">
-      <h3 className="text-[14px] font-black text-black">IF FOUND, PLEASE RETURN TO</h3>
+    <div className="flex-1 flex flex-col items-center text-center px-3 mt-1 space-y-1.5 relative z-20">
+      <h3 className="text-[12px] font-black text-black">IF FOUND, PLEASE RETURN TO</h3>
       <div className="space-y-0.5 w-full">
         <ResponsiveText 
-          maxSize={12} 
+          maxSize={11} 
           minSize={8} 
           className="font-black uppercase text-[#0e6a2e]"
         >
@@ -193,8 +193,8 @@ const IdCardBack = () => (
         </ResponsiveText>
         <div className="px-2">
           <ResponsiveText 
-            maxSize={8} 
-            minSize={6} 
+            maxSize={7} 
+            minSize={5} 
             className="font-bold text-gray-800 leading-tight"
           >
             PLOT NO # 22/STREET NO # 11, QAYYUMABAD KARACHI
@@ -203,29 +203,29 @@ const IdCardBack = () => (
       </div>
 
       <ResponsiveText 
-        maxSize={14} 
-        minSize={10} 
+        maxSize={12} 
+        minSize={9} 
         className="font-black text-black tracking-widest"
       >
         0308-2322242
       </ResponsiveText>
 
-      <ul className="text-center w-full text-[11px] font-bold text-black space-y-1">
+      <ul className="text-center w-full text-[9px] font-bold text-black space-y-0.5">
         <li>• Card is required to enter school.</li>
         <li>• Display of card is mandatory.</li>
       </ul>
     </div>
 
     {/* Signature Section */}
-    <div className="mb-6 flex flex-col items-center relative z-20">
+    <div className="mb-3 flex flex-col items-center relative z-20">
       <img 
         src="/signature.png" 
         alt="Signature" 
-        className="h-10 object-contain mb-1"
+        className="h-8 object-contain mb-0.5"
       />
       
-      <div className="w-36 border-b-2 border-black mb-1"></div>
-      <span className="font-black text-[10px] uppercase tracking-wide text-black">
+      <div className="w-28 border-b-2 border-black mb-0.5"></div>
+      <span className="font-black text-[9px] uppercase tracking-wide text-black">
         Issuing Authority
       </span>
     </div>
