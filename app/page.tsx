@@ -122,7 +122,7 @@ const IdCardFront = ({ student }: { student: StudentData }) => (
       <div className="w-[80px] h-[80px] rounded-full border-[3px] border-[#1a7a30] bg-white shadow-md overflow-hidden relative z-20">
         {student.photo ? <img src={student.photo} className="w-full h-full object-cover" alt="Student" /> : <div className="text-4xl mt-4 text-center text-gray-300">👤</div>}
       </div>
-      <div className="relative -mt-2.5 z-30 px-4 py-0.5 rounded-full font-bold text-[8px] text-white bg-[#0e6a2e] border-2 border-white shadow-sm tracking-wider">
+      <div className="relative -mt-2.5 z-30 px-4 py-0.5 rounded-full font-bold text-[8px] text-white bg-blue-600 border-2 border-white shadow-sm tracking-wider">
         STUDENT ID CARD
       </div>
     </div>
