@@ -14,8 +14,8 @@
   --card-height: 324px;  /* 3.375in × 96 = 324px */
   
   /* Print dimensions adjusted based on physical measurements */
-  --card-width-print: 2.175in;   /* Reduced by 0.125in */
-  --card-height-print: 3.40in;   /* Reduced by 0.25in */
+  --card-width-print: 2.2375in;   /* Reduced by 0.125in */
+  --card-height-print: 3.525in;   /* Reduced by 0.25in */
 }
 
 body {
