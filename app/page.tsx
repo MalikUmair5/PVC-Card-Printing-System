@@ -1,6 +1,5 @@
 "use client";
-
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef, useEffect } from 'react';
 
 /* ═══════════════════════════════════════════════════════════
    TYPE DEFINITIONS
@@ -31,25 +30,25 @@ const ResponsiveText = ({ children, minSize = 6, maxSize = 16, className = "", s
   useEffect(() => {
     const adjustFontSize = () => {
       if (!textRef.current) return;
-      
+
       const container = textRef.current;
       const containerWidth = container.offsetWidth;
-      
+
       // Start with max size and reduce until text fits
       let currentSize = maxSize;
       container.style.fontSize = `${currentSize}px`;
-      
+
       while (container.scrollWidth > containerWidth && currentSize > minSize) {
         currentSize -= 0.5;
         container.style.fontSize = `${currentSize}px`;
       }
-      
+
       setFontSize(currentSize);
     };
 
     // Initial adjustment
     adjustFontSize();
-    
+
     // Adjust on window resize
     const resizeObserver = new ResizeObserver(adjustFontSize);
     if (textRef.current) {
@@ -73,17 +72,18 @@ const ResponsiveText = ({ children, minSize = 6, maxSize = 16, className = "", s
 /* ═══════════════════════════════════════════════════════════
    ASSETS & STYLES
    ═══════════════════════════════════════════════════════════ */
+// Updated wave colors to a lighter green theme
 const TopRightWave = () => (
   <svg className="absolute top-0 right-0 z-0" width="160" height="140" viewBox="0 0 160 140" fill="none">
-    <path d="M60 0 H160 V100 Z" fill="#8cc63f" opacity="0.55" />
-    <path d="M110 0 H160 V60 Z" fill="#5a9e1e" opacity="0.7" />
+    <path d="M60 0 H160 V100 Z" fill="#66bb6a" opacity="0.55" />
+    <path d="M110 0 H160 V60 Z" fill="#43a047" opacity="0.7" />
   </svg>
 );
 
 const BottomLeftWave = () => (
   <svg className="absolute bottom-0 left-0 z-0" width="160" height="140" viewBox="0 0 160 140" fill="none">
-    <path d="M100 140 H0 V40 Z" fill="#8cc63f" opacity="0.55" />
-    <path d="M50 140 H0 V80 Z" fill="#5a9e1e" opacity="0.7" />
+    <path d="M100 140 H0 V40 Z" fill="#66bb6a" opacity="0.55" />
+    <path d="M50 140 H0 V80 Z" fill="#43a047" opacity="0.7" />
   </svg>
 );
 
@@ -91,7 +91,8 @@ const CardBackground = ({ children }: { children: React.ReactNode }) => (
   <div
     className="id-card rounded-lg overflow-hidden relative flex flex-col border border-gray-200 shadow-lg print:shadow-none print:border-gray-400"
     style={{
-      background: "linear-gradient(180deg, #a8d84e 0%, #d4e8a4 15%, #f2f8e8 35%, #fafff2 50%, #f2f8e8 65%, #d4e8a4 85%, #8cc63f 100%)",
+      // MODIFIED: Changed gradient to softer, lighter green tones
+      background: "linear-gradient(180deg, #66bb6a 0%, #81c784 15%, #c8e6c9 35%, #e8f5e9 50%, #c8e6c9 65%, #81c784 85%, #66bb6a 100%)",
     }}
   >
     <TopRightWave />
@@ -103,14 +104,14 @@ const CardBackground = ({ children }: { children: React.ReactNode }) => (
 /* ═══════════════════════════════════════════════════════════
    CARD COMPONENTS (Clearer & Centralized)
    ═══════════════════════════════════════════════════════════ */
-const IdCardFront = ({ student }: { student: StudentData }) => (
+export const IdCardFront = ({ student }: { student: StudentData }) => (
   <CardBackground>
     {/* Header */}
     <div className="mt-4 px-1 text-center relative z-20">
-      <ResponsiveText 
-        maxSize={16} 
-        minSize={12} 
-        className="leading-tight font-extrabold text-[#0e6a2e] italic drop-shadow-sm" 
+      <ResponsiveText
+        maxSize={16}
+        minSize={12}
+        className="leading-tight font-extrabold text-[#0e6a2e] italic drop-shadow-sm"
         style={{ fontFamily: "serif" }}
       >
         Quaid-e-Azam Public Sec School
@@ -119,7 +120,8 @@ const IdCardFront = ({ student }: { student: StudentData }) => (
 
     {/* Photo */}
     <div className="flex flex-col items-center mt-2">
-      <div className="w-[80px] h-[80px] rounded-full border-[3px] border-[#1a7a30] bg-white shadow-md overflow-hidden relative z-20">
+      {/* Kept the previously increased size of w-[96px] h-[96px] */}
+      <div className="w-[96px] h-[96px] rounded-full border-[3px] border-[#1a7a30] bg-white shadow-md overflow-hidden relative z-20">
         {student.photo ? <img src={student.photo} className="w-full h-full object-cover" alt="Student" /> : <div className="text-4xl mt-4 text-center text-gray-300">👤</div>}
       </div>
       <div className="relative -mt-2.5 z-30 px-4 py-0.5 rounded-full font-bold text-[8px] text-white bg-blue-600 border-2 border-white shadow-sm tracking-wider">
@@ -130,18 +132,18 @@ const IdCardFront = ({ student }: { student: StudentData }) => (
     {/* Student Details */}
     <div className="flex-1 px-4 mt-3 space-y-1.5 text-[11px] font-bold text-gray-900 relative z-20">
       {[
-        ["Name", student.name], 
-        ["Father", student.fatherName], 
-        ["Class", student.class], 
+        ["Name", student.name],
+        ["Father", student.fatherName],
+        ["Class", student.class],
         ["GR #", student.grNumber]
       ].map(([label, value]) => (
         <div key={label} className="flex items-end gap-1.5 border-b border-gray-600/40 pb-0.5">
           <span className="whitespace-nowrap w-11 text-[#0e6a2e] font-extrabold text-[10px]">{label}:</span>
           <div className="flex-1">
             {(label === "Name" || label === "Father") ? (
-              <ResponsiveText 
-                maxSize={9} 
-                minSize={6} 
+              <ResponsiveText
+                maxSize={9}
+                minSize={6}
                 className="font-black text-black uppercase text-left"
               >
                 {value}
@@ -156,9 +158,9 @@ const IdCardFront = ({ student }: { student: StudentData }) => (
 
     {/* Footer */}
     <div className="text-center pb-3 pt-1 relative z-20">
-      <ResponsiveText 
-        maxSize={14} 
-        minSize={10} 
+      <ResponsiveText
+        maxSize={14}
+        minSize={10}
         className="font-black text-[#0e6a2e] tracking-[0.2em] drop-shadow-sm"
       >
         QUAIDIAN
@@ -167,15 +169,15 @@ const IdCardFront = ({ student }: { student: StudentData }) => (
   </CardBackground>
 );
 
-const IdCardBack = () => (
+export const IdCardBack = () => (
   <CardBackground>
     {/* Logo Section */}
     <div className="mt-4 flex justify-center relative z-20">
       <div className="w-20 h-20 flex items-center justify-center">
-        <img 
-          src="/transparent-bg-logo.png" 
-          alt="School Logo" 
-          className="w-full h-full object-contain drop-shadow-md" 
+        <img
+          src="/transparent-bg-logo.png"
+          alt="School Logo"
+          className="w-full h-full object-contain drop-shadow-md"
         />
       </div>
     </div>
@@ -184,17 +186,17 @@ const IdCardBack = () => (
     <div className="flex-1 flex flex-col items-center text-center px-3 mt-1 space-y-1.5 relative z-20">
       <h3 className="text-[12px] font-black text-black">IF FOUND, PLEASE RETURN TO</h3>
       <div className="space-y-0.5 w-full">
-        <ResponsiveText 
-          maxSize={11} 
-          minSize={8} 
+        <ResponsiveText
+          maxSize={11}
+          minSize={8}
           className="font-black uppercase text-[#0e6a2e]"
         >
           Quaid-e-Azam Public Sec School
         </ResponsiveText>
         <div className="px-2">
-          <ResponsiveText 
-            maxSize={7} 
-            minSize={5} 
+          <ResponsiveText
+            maxSize={7}
+            minSize={5}
             className="font-bold text-gray-800 leading-tight"
           >
             PLOT NO # 22/STREET NO # 11, QAYYUMABAD KARACHI
@@ -202,9 +204,9 @@ const IdCardBack = () => (
         </div>
       </div>
 
-      <ResponsiveText 
-        maxSize={12} 
-        minSize={9} 
+      <ResponsiveText
+        maxSize={12}
+        minSize={9}
         className="font-black text-black tracking-widest"
       >
         0308-2322242
@@ -218,12 +220,12 @@ const IdCardBack = () => (
 
     {/* Signature Section */}
     <div className="mb-3 flex flex-col items-center relative z-20">
-      <img 
-        src="/signature.png" 
-        alt="Signature" 
+      <img
+        src="/signature.png"
+        alt="Signature"
         className="h-8 object-contain mb-0.5"
       />
-      
+
       <div className="w-28 border-b-2 border-black mb-0.5"></div>
       <span className="font-black text-[9px] uppercase tracking-wide text-black">
         Issuing Authority
@@ -231,7 +233,6 @@ const IdCardBack = () => (
     </div>
   </CardBackground>
 );
-
 /* ═══════════════════════════════════════════════════════════
    MAIN APP LOGIC
    ═══════════════════════════════════════════════════════════ */
@@ -270,7 +271,7 @@ export default function IdCardApp() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 font-sans">
-      
+
       {/* ──────────────────────────────────────────────────────────
           INPUT UI (Visible on Screen)
           ────────────────────────────────────────────────────────── */}
@@ -280,10 +281,10 @@ export default function IdCardApp() {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-slate-800">Card Preview</h2>
               <div className="flex gap-3">
-                
+
                 {/* FLIP BUTTON */}
-                <button 
-                  onClick={() => setIsMirrored(!isMirrored)} 
+                <button
+                  onClick={() => setIsMirrored(!isMirrored)}
                   className={`px-4 py-2 rounded-xl font-bold border transition-all ${isMirrored ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-700 border-purple-200 hover:bg-purple-50'}`}
                 >
                   {isMirrored ? "✅ Mirrored (Ready)" : "🔄 Flip for Print"}
@@ -319,17 +320,17 @@ export default function IdCardApp() {
             <div className="flex justify-center mb-4">
               <img id="photo-preview" className="w-28 h-28 rounded-full border-4 border-blue-100 object-cover bg-slate-50" src="" alt="Preview" />
             </div>
-            
+
             <input name="name" placeholder="Student Name" required className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-center font-bold text-lg" />
             <input name="father" placeholder="Father's Name" required className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-center font-bold text-lg" />
-            
+
             <div className="grid grid-cols-2 gap-3">
               <input name="class" placeholder="Class" required className="p-3 bg-slate-50 border border-slate-300 rounded-xl outline-none text-center font-bold" />
               <input name="gr" placeholder="GR #" required className="p-3 bg-slate-50 border border-slate-300 rounded-xl outline-none text-center font-bold" />
             </div>
-            
+
             <input type="file" onChange={handleFileUpload} className="text-sm block w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer" />
-            
+
             <button type="submit" className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-black transition-all shadow-lg text-lg">
               Add to Print List
             </button>
@@ -344,18 +345,18 @@ export default function IdCardApp() {
       <div className="hidden print:block">
         {/* The 'mirror-mode' class here ensures the print output is also flipped */}
         <div className={`a4-print-container ${isMirrored ? 'mirror-mode' : ''}`}>
-          
+
           {/* ROW 1: FRONTS */}
           {Array.from({ length: 4 }).map((_, i) => (
             <div className="print-card-wrapper" key={`front-${i}`}>
-              {students[i] ? <IdCardFront student={students[i]} /> : <div className="id-card" style={{border: 'none'}} />}
+              {students[i] ? <IdCardFront student={students[i]} /> : <div className="id-card" style={{ border: 'none' }} />}
             </div>
           ))}
 
           {/* ROW 2: BACKS */}
           {Array.from({ length: 4 }).map((_, i) => (
             <div className="print-card-wrapper" key={`back-${i}`}>
-              {students[i] ? <IdCardBack /> : <div className="id-card" style={{border: 'none'}} />}
+              {students[i] ? <IdCardBack /> : <div className="id-card" style={{ border: 'none' }} />}
             </div>
           ))}
 
