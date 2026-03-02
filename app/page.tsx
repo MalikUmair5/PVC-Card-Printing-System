@@ -91,8 +91,8 @@ const CardBackground = ({ children }: { children: React.ReactNode }) => (
   <div
     className="id-card rounded-lg overflow-hidden relative flex flex-col border border-gray-200 shadow-lg print:shadow-none print:border-gray-400"
     style={{
-      // MODIFIED: Changed gradient to softer, lighter green tones
-      background: "linear-gradient(180deg, #66bb6a 0%, #81c784 15%, #c8e6c9 35%, #e8f5e9 50%, #c8e6c9 65%, #81c784 85%, #66bb6a 100%)",
+      // MODIFIED: Darker, richer green gradient for better contrast
+      background: "linear-gradient(180deg, #4a7c2f 0%, #5b8e3c 15%, #7aa96a 35%, #98c48d 50%, #7aa96a 65%, #5b8e3c 85%, #4a7c2f 100%)",
     }}
   >
     <TopRightWave />
@@ -124,7 +124,7 @@ export const IdCardFront = ({ student }: { student: StudentData }) => (
       <div className="w-[96px] h-[96px] rounded-full border-[3px] border-[#1a7a30] bg-white shadow-md overflow-hidden relative z-20">
         {student.photo ? <img src={student.photo} className="w-full h-full object-cover" alt="Student" /> : <div className="text-4xl mt-4 text-center text-gray-300">👤</div>}
       </div>
-      <div className="relative -mt-2.5 z-30 px-4 py-0.5 rounded-full font-bold text-[8px] text-white bg-blue-600 border-2 border-white shadow-sm tracking-wider">
+      <div className="relative -mt-2.5 z-30 px-4 py-0.5 rounded-full font-bold text-[8px] text-white bg-blue-700 border-2 border-white shadow-sm tracking-wider">
         STUDENT ID CARD
       </div>
     </div>
@@ -136,24 +136,26 @@ export const IdCardFront = ({ student }: { student: StudentData }) => (
         ["Father", student.fatherName],
         ["Class", student.class],
         ["GR #", student.grNumber]
-      ].map(([label, value]) => (
-        <div key={label} className="flex items-end gap-1.5 border-b border-gray-600/40 pb-0.5">
-          <span className="whitespace-nowrap w-11 text-[#0e6a2e] font-extrabold text-[10px]">{label}:</span>
-          <div className="flex-1">
-            {(label === "Name" || label === "Father") ? (
-              <ResponsiveText
-                maxSize={9}
-                minSize={6}
-                className="font-black text-black uppercase text-left"
-              >
-                {value}
-              </ResponsiveText>
-            ) : (
-              <span className="flex-1 font-black text-black uppercase truncate text-left text-[9px]">{value}</span>
-            )}
+      ]
+        .filter(([,v]) => v !== "") // skip empty values such as class when not provided
+        .map(([label, value]) => (
+          <div key={label} className="flex items-end gap-1.5 border-b border-gray-600/40 pb-0.5">
+            <span className="whitespace-nowrap w-11 text-[#0e6a2e] font-extrabold text-[10px]">{label}:</span>
+            <div className="flex-1">
+              {(label === "Name" || label === "Father") ? (
+                <ResponsiveText
+                  maxSize={9}
+                  minSize={6}
+                  className="font-black text-black uppercase text-left"
+                >
+                  {value}
+                </ResponsiveText>
+              ) : (
+                <span className="flex-1 font-black text-black uppercase truncate text-left text-[9px]">{value}</span>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
     </div>
 
     {/* Footer */}
@@ -239,6 +241,7 @@ export const IdCardBack = () => (
 export default function IdCardApp() {
   const [students, setStudents] = useState<StudentData[]>([]);
   const [isMirrored, setIsMirrored] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -254,19 +257,54 @@ export default function IdCardApp() {
 
   const handleAdd = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (students.length >= 4) return alert("Sheet is full! (Max 4 Students per page)");
     const fd = new FormData(e.currentTarget);
     const photo = (document.getElementById('photo-preview') as HTMLImageElement)?.src || "";
 
-    setStudents([...students, {
+    // require an image before proceeding
+    if (!photo) return alert("Please upload a photo; the card cannot be processed without it.");
+
+    const newStudent: StudentData = {
       name: fd.get('name') as string,
       fatherName: fd.get('father') as string,
       class: fd.get('class') as string,
       grNumber: fd.get('gr') as string,
       photo
-    }]);
+    };
+
+    if (editingIndex !== null) {
+      // update existing
+      const updated = [...students];
+      updated[editingIndex] = newStudent;
+      setStudents(updated);
+      setEditingIndex(null);
+    } else {
+      if (students.length >= 4) return alert("Sheet is full! (Max 4 Students per page)");
+      setStudents([...students, newStudent]);
+    }
+
     e.currentTarget.reset();
     (document.getElementById('photo-preview') as HTMLImageElement).src = "";
+  };
+
+  const handleEdit = (index: number) => {
+    const s = students[index];
+    const form = document.querySelector('form') as HTMLFormElement;
+    if (form) {
+      (form.elements.namedItem('name') as HTMLInputElement).value = s.name;
+      (form.elements.namedItem('father') as HTMLInputElement).value = s.fatherName;
+      (form.elements.namedItem('class') as HTMLInputElement).value = s.class;
+      (form.elements.namedItem('gr') as HTMLInputElement).value = s.grNumber;
+      const preview = document.getElementById('photo-preview') as HTMLImageElement;
+      if (preview) preview.src = s.photo;
+    }
+    setEditingIndex(index);
+  };
+
+  const handleDelete = (index: number) => {
+    const updated = students.filter((_, i) => i !== index);
+    setStudents(updated);
+    // if we were editing that one, cancel
+    if (editingIndex === index) setEditingIndex(null);
   };
 
   return (
@@ -290,7 +328,7 @@ export default function IdCardApp() {
                   {isMirrored ? "✅ Mirrored (Ready)" : "🔄 Flip for Print"}
                 </button>
 
-                <button onClick={() => window.print()} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-bold transition-all shadow-md">
+                <button onClick={() => window.print()} className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded-xl font-bold transition-all shadow-md">
                   Print Sheet
                 </button>
                 <button onClick={() => setStudents([])} className="bg-slate-100 text-slate-600 px-6 py-2 rounded-xl font-bold hover:bg-slate-200">
@@ -303,7 +341,20 @@ export default function IdCardApp() {
             <div className={`flex flex-wrap gap-4 bg-slate-100 p-8 rounded-xl border-2 border-dashed border-slate-300 justify-center transition-transform duration-300 ${isMirrored ? 'scale-x-[-1]' : ''}`}>
               {students.length === 0 && <p className="text-slate-400 italic w-full text-center scale-x-100">No students added. Add up to 4 students.</p>}
               {students.map((s, i) => (
-                <div key={i} className="flex gap-2 scale-75 origin-top">
+                <div key={i} className="relative flex gap-2 scale-75 origin-top">
+                  {/* overlay controls */}
+                  <div className="absolute top-0 right-0 flex space-x-1 z-40">
+                    <button
+                      onClick={() => handleEdit(i)}
+                      className="text-xs bg-white rounded-full p-1 shadow hover:bg-gray-100"
+                      title="Edit"
+                    >✏️</button>
+                    <button
+                      onClick={() => handleDelete(i)}
+                      className="text-xs bg-white rounded-full p-1 shadow hover:bg-gray-100"
+                      title="Delete"
+                    >🗑️</button>
+                  </div>
                   <IdCardFront student={s} />
                   <IdCardBack />
                 </div>
@@ -318,22 +369,38 @@ export default function IdCardApp() {
           <h3 className="text-xl font-bold mb-4 text-slate-800 text-center">Add Student Details</h3>
           <form onSubmit={handleAdd} className="space-y-4">
             <div className="flex justify-center mb-4">
-              <img id="photo-preview" className="w-28 h-28 rounded-full border-4 border-blue-100 object-cover bg-slate-50" src="" alt="Preview" />
+              <img id="photo-preview" className="w-28 h-28 rounded-full border-4 border-blue-200 object-cover bg-slate-50" src="" alt="Preview" />
             </div>
 
-            <input name="name" placeholder="Student Name" required className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-center font-bold text-lg" />
-            <input name="father" placeholder="Father's Name" required className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-center font-bold text-lg" />
+            <input name="name" placeholder="Student Name" required className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none text-center font-bold text-lg" />
+            <input name="father" placeholder="Father's Name" required className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none text-center font-bold text-lg" />
 
             <div className="grid grid-cols-2 gap-3">
-              <input name="class" placeholder="Class" required className="p-3 bg-slate-50 border border-slate-300 rounded-xl outline-none text-center font-bold" />
+              <input name="class" placeholder="Class (optional)" className="p-3 bg-slate-50 border border-slate-300 rounded-xl outline-none text-center font-bold" />
               <input name="gr" placeholder="GR #" required className="p-3 bg-slate-50 border border-slate-300 rounded-xl outline-none text-center font-bold" />
             </div>
 
-            <input type="file" onChange={handleFileUpload} className="text-sm block w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer" />
+            <input type="file" onChange={handleFileUpload} className="text-sm block w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-200 file:text-blue-800 hover:file:bg-blue-300 transition-all cursor-pointer" />
 
-            <button type="submit" className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-black transition-all shadow-lg text-lg">
-              Add to Print List
-            </button>
+            <div className="flex flex-col gap-2">
+              <button type="submit" className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-black transition-all shadow-lg text-lg">
+                {editingIndex !== null ? 'Update Entry' : 'Add to Print List'}
+              </button>
+              {editingIndex !== null && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const form = document.querySelector('form') as HTMLFormElement;
+                    if (form) form.reset();
+                    (document.getElementById('photo-preview') as HTMLImageElement).src = "";
+                    setEditingIndex(null);
+                  }}
+                  className="w-full bg-gray-200 text-gray-800 py-3 rounded-xl font-bold hover:bg-gray-300 transition-all shadow-inner text-lg"
+                >
+                  Cancel Edit
+                </button>
+              )}
+            </div>
             <p className="text-xs text-center text-gray-400 font-semibold">Cards Added: {students.length}/4</p>
           </form>
         </div>
