@@ -92,7 +92,7 @@ const CardBackground = ({ children }: { children: React.ReactNode }) => (
     className="id-card rounded-lg overflow-hidden relative flex flex-col border border-gray-200 shadow-lg print:shadow-none print:border-gray-400"
     style={{
       // MODIFIED: Darker, richer green gradient for better contrast
-      background: "linear-gradient(180deg, #4a7c2f 0%, #5b8e3c 15%, #7aa96a 35%, #98c48d 50%, #7aa96a 65%, #5b8e3c 85%, #4a7c2f 100%)",
+      background: "linear-gradient(180deg, #579038 0%, #69a345 15%, #89b779 35%, #a9d09f 50%, #89b779 65%, #69a345 85%, #579038 100%)",
     }}
   >
     <TopRightWave />
@@ -111,7 +111,7 @@ export const IdCardFront = ({ student }: { student: StudentData }) => (
       <ResponsiveText
         maxSize={16}
         minSize={12}
-        className="leading-tight font-extrabold text-[#0e6a2e] italic drop-shadow-sm"
+        className="leading-tight font-extrabold text-[#0e6a2e] drop-shadow-sm"
         style={{ fontFamily: "serif" }}
       >
         Quaid-e-Azam Public Sec School
@@ -175,7 +175,7 @@ export const IdCardBack = () => (
   <CardBackground>
     {/* Logo Section */}
     <div className="mt-4 flex justify-center relative z-20">
-      <div className="w-20 h-20 flex items-center justify-center">
+      <div className="w-22 h-22 flex items-center justify-center bg-white p-2 rounded-full border-2 border-[#1a7a30] shadow-md">
         <img
           src="/transparent-bg-logo.png"
           alt="School Logo"
