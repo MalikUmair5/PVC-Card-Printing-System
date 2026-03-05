@@ -278,7 +278,7 @@ export default function IdCardApp() {
       setStudents(updated);
       setEditingIndex(null);
     } else {
-      if (students.length >= 4) return alert("Sheet is full! (Max 4 Students per page)");
+      if (students.length >= 5) return alert("Sheet is full! (Max 4 Students per page)");
       setStudents([...students, newStudent]);
     }
 
@@ -414,14 +414,14 @@ export default function IdCardApp() {
         <div className={`a4-print-container ${isMirrored ? 'mirror-mode' : ''}`}>
 
           {/* ROW 1: FRONTS */}
-          {Array.from({ length: 4 }).map((_, i) => (
+          {Array.from({ length: 5 }).map((_, i) => (
             <div className="print-card-wrapper" key={`front-${i}`}>
               {students[i] ? <IdCardFront student={students[i]} /> : <div className="id-card" style={{ border: 'none' }} />}
             </div>
           ))}
 
           {/* ROW 2: BACKS */}
-          {Array.from({ length: 4 }).map((_, i) => (
+          {Array.from({ length: 5 }).map((_, i) => (
             <div className="print-card-wrapper" key={`back-${i}`}>
               {students[i] ? <IdCardBack /> : <div className="id-card" style={{ border: 'none' }} />}
             </div>

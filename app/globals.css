@@ -96,7 +96,7 @@ body {
     overflow: hidden; 
     
     display: grid !important;
-    grid-template-columns: repeat(4, var(--card-width-print));
+    grid-template-columns: repeat(5, var(--card-width-print));
     grid-template-rows: repeat(2, var(--card-height-print));
     
     /* GAPS for cutting */
