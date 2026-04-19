@@ -1,8 +1,8 @@
 "use client";
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 
 /* ═══════════════════════════════════════════════════════════
-   TYPE DEFINITIONS
+   TYPES
    ═══════════════════════════════════════════════════════════ */
 interface StudentData {
   name: string;
@@ -13,56 +13,46 @@ interface StudentData {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   RESPONSIVE TEXT COMPONENT
+   RESPONSIVE TEXT
+   Shrinks font-size until text fits its container width.
    ═══════════════════════════════════════════════════════════ */
 interface ResponsiveTextProps {
   children: React.ReactNode;
   minSize?: number;
   maxSize?: number;
-  className?: string;
   style?: React.CSSProperties;
 }
 
-const ResponsiveText = ({ children, minSize = 6, maxSize = 16, className = "", style = {} }: ResponsiveTextProps) => {
-  const textRef = useRef<HTMLDivElement>(null);
+const ResponsiveText = ({
+  children,
+  minSize = 6,
+  maxSize = 16,
+  style = {},
+}: ResponsiveTextProps) => {
+  const ref = useRef<HTMLDivElement>(null);
   const [fontSize, setFontSize] = useState(maxSize);
 
   useEffect(() => {
-    const adjustFontSize = () => {
-      if (!textRef.current) return;
-
-      const container = textRef.current;
-      const containerWidth = container.offsetWidth;
-
-      // Start with max size and reduce until text fits
-      let currentSize = maxSize;
-      container.style.fontSize = `${currentSize}px`;
-
-      while (container.scrollWidth > containerWidth && currentSize > minSize) {
-        currentSize -= 0.5;
-        container.style.fontSize = `${currentSize}px`;
+    const adjust = () => {
+      if (!ref.current) return;
+      let size = maxSize;
+      ref.current.style.fontSize = `${size}px`;
+      while (ref.current.scrollWidth > ref.current.offsetWidth && size > minSize) {
+        size -= 0.5;
+        ref.current.style.fontSize = `${size}px`;
       }
-
-      setFontSize(currentSize);
+      setFontSize(size);
     };
-
-    // Initial adjustment
-    adjustFontSize();
-
-    // Adjust on window resize
-    const resizeObserver = new ResizeObserver(adjustFontSize);
-    if (textRef.current) {
-      resizeObserver.observe(textRef.current);
-    }
-
-    return () => resizeObserver.disconnect();
+    adjust();
+    const ro = new ResizeObserver(adjust);
+    if (ref.current) ro.observe(ref.current);
+    return () => ro.disconnect();
   }, [children, minSize, maxSize]);
 
   return (
     <div
-      ref={textRef}
-      className={`break-words leading-tight ${className}`}
-      style={{ fontSize: `${fontSize}px`, maxWidth: '100%', ...style }}
+      ref={ref}
+      style={{ fontSize: `${fontSize}px`, maxWidth: "100%", lineHeight: 1.15, ...style }}
     >
       {children}
     </div>
@@ -70,365 +60,810 @@ const ResponsiveText = ({ children, minSize = 6, maxSize = 16, className = "", s
 };
 
 /* ═══════════════════════════════════════════════════════════
-   ASSETS & STYLES
+   SHARED CARD GRADIENT
+   Radial: bright, lighter yellow-green center → lighter green edges
    ═══════════════════════════════════════════════════════════ */
-// Updated wave colors to a lighter green theme
-const TopRightWave = () => (
-  <svg className="absolute top-0 right-0 z-0" width="160" height="140" viewBox="0 0 160 140" fill="none">
-    <path d="M60 0 H160 V100 Z" fill="#66bb6a" opacity="0.55" />
-    <path d="M110 0 H160 V60 Z" fill="#43a047" opacity="0.7" />
+const CARD_BG: React.CSSProperties = {
+  background:
+    "radial-gradient(ellipse at 50% 42%, #fdfce3 0%, #eefc9f 28%, #d1f067 55%, #a6d43e 78%, #72ad20 100%)",
+};
+
+/* ═══════════════════════════════════════════════════════════
+   SWOOSH SVGs  — width="100%" fills whatever .id-card width is
+   ═══════════════════════════════════════════════════════════ */
+const FrontSwoosh = () => (
+  <svg
+    style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: "28%", zIndex: 1 }}
+    viewBox="0 0 204 97"
+    preserveAspectRatio="none"
+  >
+    <path d="M0,97 L204,97 L204,49 Q112,93 0,44 Z" fill="rgba(80,150,20,0.45)" />
+    <path d="M84,97 L204,97 L204,0 Q168,76 49,97 Z" fill="rgba(30,90,10,0.55)" />
   </svg>
 );
 
-const BottomLeftWave = () => (
-  <svg className="absolute bottom-0 left-0 z-0" width="160" height="140" viewBox="0 0 160 140" fill="none">
-    <path d="M100 140 H0 V40 Z" fill="#66bb6a" opacity="0.55" />
-    <path d="M50 140 H0 V80 Z" fill="#43a047" opacity="0.7" />
+const BackSwoosh = () => (
+  <svg
+    style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: "22%", zIndex: 1 }}
+    viewBox="0 0 204 78"
+    preserveAspectRatio="none"
+  >
+    <path d="M0,78 L204,78 L204,43 Q124,78 0,34 Z" fill="rgba(80,150,20,0.45)" />
+    <path d="M93,78 L204,78 L204,0 Q173,62 58,78 Z" fill="rgba(30,90,10,0.55)" />
   </svg>
 );
 
-const CardBackground = ({ children }: { children: React.ReactNode }) => (
+/* ═══════════════════════════════════════════════════════════
+   FIELD ROW
+   ═══════════════════════════════════════════════════════════ */
+const FieldRow = ({ label, value }: { label: string; value: string }) => (
   <div
-    className="id-card rounded-lg overflow-hidden relative flex flex-col border border-gray-200 shadow-lg print:shadow-none print:border-gray-400"
     style={{
-      // MODIFIED: Darker, richer green gradient for better contrast
-      background: "linear-gradient(180deg, #579038 0%, #69a345 15%, #89b779 35%, #a9d09f 50%, #89b779 65%, #69a345 85%, #579038 100%)",
+      display: "flex",
+      alignItems: "flex-end",
+      marginBottom: 8,
+      width: "100%",
     }}
   >
-    <TopRightWave />
-    <BottomLeftWave />
-    <div className="relative z-10 h-full flex flex-col">{children}</div>
+    <span
+      style={{
+        fontSize: 11,
+        fontWeight: 800,
+        color: "#0e6a2e",
+        whiteSpace: "nowrap",
+        marginRight: 4,
+        paddingBottom: 1,
+        fontFamily: "serif",
+        flexShrink: 0,
+      }}
+    >
+      {label}
+    </span>
+    <div
+      style={{
+        flex: 1,
+        borderBottom: "1.5px solid #2a2a2a",
+        paddingBottom: 1,
+        paddingLeft: 3,
+        minWidth: 0,
+      }}
+    >
+      <ResponsiveText
+        minSize={8}
+        maxSize={13}
+        style={{
+          fontWeight: 900,
+          color: "#111",
+          textTransform: "uppercase",
+          fontFamily: "serif",
+          letterSpacing: 0.5,
+        }}
+      >
+        {value}
+      </ResponsiveText>
+    </div>
   </div>
 );
 
 /* ═══════════════════════════════════════════════════════════
-   CARD COMPONENTS (Clearer & Centralized)
+   FRONT CARD
    ═══════════════════════════════════════════════════════════ */
 export const IdCardFront = ({ student }: { student: StudentData }) => (
-  <CardBackground>
-    {/* Header */}
-    <div className="mt-4 px-1 text-center relative z-20">
-      <ResponsiveText
-        maxSize={16}
-        minSize={12}
-        className="leading-tight font-extrabold text-[#0e6a2e] drop-shadow-sm"
-        style={{ fontFamily: "serif" }}
-      >
-        Quaid-e-Azam Public Sec School
-      </ResponsiveText>
-    </div>
+  <div
+    className="id-card"
+    style={{
+      ...CARD_BG,
+      borderRadius: 12,
+      boxShadow: "0 4px 20px rgba(0,0,0,0.22)",
+      WebkitFontSmoothing: "antialiased",
+    }}
+  >
+    <FrontSwoosh />
 
-    {/* Photo */}
-    <div className="flex flex-col items-center mt-2">
-      {/* Kept the previously increased size of w-[96px] h-[96px] */}
-      <div className="w-[96px] h-[96px] rounded-full border-[3px] border-[#1a7a30] bg-white shadow-md overflow-hidden relative z-20">
-        {student.photo ? <img src={student.photo} className="w-full h-full object-cover" alt="Student" /> : <div className="text-4xl mt-4 text-center text-gray-300">👤</div>}
-      </div>
-      <div className="relative -mt-2.5 z-30 px-4 py-0.5 rounded-full font-bold text-[8px] text-white bg-blue-700 border-2 border-white shadow-sm tracking-wider">
-        STUDENT ID CARD
-      </div>
-    </div>
-
-    {/* Student Details */}
-    <div className="flex-1 px-4 mt-3 space-y-1.5 text-[11px] font-bold text-gray-900 relative z-20">
-      {[
-        ["Name", student.name],
-        ["Father", student.fatherName],
-        ["Class", student.class],
-        ["GR #", student.grNumber]
-      ]
-        .filter(([,v]) => v !== "") // skip empty values such as class when not provided
-        .map(([label, value]) => (
-          <div key={label} className="flex items-end gap-1.5 border-b border-gray-600/40 pb-0.5">
-            <span className="whitespace-nowrap w-11 text-[#0e6a2e] font-extrabold text-[10px]">{label}:</span>
-            <div className="flex-1">
-              {(label === "Name" || label === "Father") ? (
-                <ResponsiveText
-                  maxSize={9}
-                  minSize={6}
-                  className="font-black text-black uppercase text-left"
-                >
-                  {value}
-                </ResponsiveText>
-              ) : (
-                <span className="flex-1 font-black text-black uppercase truncate text-left text-[9px]">{value}</span>
-              )}
-            </div>
-          </div>
-        ))}
-    </div>
-
-    {/* Footer */}
-    <div className="text-center pb-3 pt-1 relative z-20">
-      <ResponsiveText
-        maxSize={14}
-        minSize={10}
-        className="font-black text-[#0e6a2e] tracking-[0.2em] drop-shadow-sm"
-      >
-        QUAIDIAN
-      </ResponsiveText>
-    </div>
-  </CardBackground>
-);
-
-export const IdCardBack = () => (
-  <CardBackground>
-    {/* Logo Section */}
-    <div className="mt-4 flex justify-center relative z-20">
-      <div className="w-22 h-22 flex items-center justify-center bg-white p-2 rounded-full border-2 border-[#1a7a30] shadow-md">
-        <img
-          src="/transparent-bg-logo.png"
-          alt="School Logo"
-          className="w-full h-full object-contain drop-shadow-md"
-        />
-      </div>
-    </div>
-
-    {/* Address Section */}
-    <div className="flex-1 flex flex-col items-center text-center px-3 mt-1 space-y-1.5 relative z-20">
-      <h3 className="text-[12px] font-black text-black">IF FOUND, PLEASE RETURN TO</h3>
-      <div className="space-y-0.5 w-full">
+    <div
+      style={{
+        position: "relative",
+        zIndex: 10,
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        padding: "10px 0 0",
+      }}
+    >
+      {/* ── School Name ── */}
+      <div style={{ width: "100%", padding: "0 6px", textAlign: "center" }}>
         <ResponsiveText
-          maxSize={11}
-          minSize={8}
-          className="font-black uppercase text-[#0e6a2e]"
+          minSize={12}
+          maxSize={18}
+          style={{
+            fontWeight: 900,
+            color: "#0e6a2e",
+            fontFamily: "serif",
+            textAlign: "center",
+            textShadow: "0 1px 0 rgba(255,255,255,0.7)",
+          }}
         >
           Quaid-e-Azam Public Sec School
         </ResponsiveText>
-        <div className="px-2">
-          <ResponsiveText
-            maxSize={7}
-            minSize={5}
-            className="font-bold text-gray-800 leading-tight"
-          >
-            PLOT NO # 22/STREET NO # 11, QAYYUMABAD KARACHI
-          </ResponsiveText>
+      </div>
+
+      {/* ── Photo ── */}
+      <div
+        style={{
+          width: 92,
+          height: 92,
+          borderRadius: "50%",
+          border: "3px solid #1a7a30",
+          background: "#ffffff",
+          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginTop: 8,
+          flexShrink: 0,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+        }}
+      >
+        {student.photo ? (
+          <img
+            src={student.photo}
+            alt="Student"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+          />
+        ) : (
+          <span style={{ color: "#ccc", fontSize: 36 }}>👤</span>
+        )}
+      </div>
+
+      {/* ── STUDENT ID CARD Badge ── */}
+      <div
+        style={{
+          marginTop: 8,
+          background: "linear-gradient(135deg, #2a5fd4, #1a3fa0)",
+          color: "white",
+          fontFamily: "sans-serif",
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: 1.5,
+          padding: "3px 14px",
+          borderRadius: 20,
+          border: "1px solid #1a3080",
+          flexShrink: 0,
+        }}
+      >
+        STUDENT ID CARD
+      </div>
+
+      {/* ── Fields ── */}
+      <div style={{ width: "100%", padding: "0 12px", marginTop: 10, flex: 1 }}>
+        <FieldRow label="Name:" value={student.name} />
+        <FieldRow label="Father's Name:" value={student.fatherName} />
+        <FieldRow label="Class:" value={student.class} />
+        <FieldRow label="GR #:" value={student.grNumber} />
+      </div>
+
+      {/* ── QUAIDIAN ── */}
+      <div
+        style={{
+          fontFamily: "serif",
+          fontSize: 15,
+          fontWeight: 900,
+          color: "#1a5220",
+          letterSpacing: 5,
+          position: "absolute",
+          bottom: 6,
+          left: "50%",
+          transform: "translateX(-50%)",
+          textShadow: "1px 1px 0 rgba(255,255,255,0.5)",
+          zIndex: 20,
+          whiteSpace: "nowrap",
+        }}
+      >
+        QUAIDIAN
+      </div>
+    </div>
+  </div>
+);
+
+/* ═══════════════════════════════════════════════════════════
+   BACK CARD
+   ═══════════════════════════════════════════════════════════ */
+export const IdCardBack = () => (
+  <div
+    className="id-card"
+    style={{
+      ...CARD_BG,
+      borderRadius: 12,
+      boxShadow: "0 4px 20px rgba(0,0,0,0.22)",
+      WebkitFontSmoothing: "antialiased",
+    }}
+  >
+    <BackSwoosh />
+
+    <div
+      style={{
+        position: "relative",
+        zIndex: 10,
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        padding: "12px 0 0", // Reduced top padding
+      }}
+    >
+      {/* ── School Logo ── */}
+      <div
+        style={{
+          width: 95, // Reduced from 110
+          height: 75, // Reduced from 85
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        <img
+          src="/transparent-bg-logo.png"
+          alt="School Logo"
+          style={{ width: "100%", height: "100%", objectFit: "contain" }}
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+            const p = e.currentTarget.parentElement;
+            if (p)
+              p.innerHTML = `<div style="width:75px;height:75px;border-radius:50%;border:2px solid #1a5c2a;display:flex;align-items:center;justify-content:center;background:white;font-size:8px;font-weight:900;color:#1a5c2a;text-align:center;line-height:1.3;">QPS<br/>LOGO</div>`;
+          }}
+        />
+      </div>
+
+      {/* ── Info text ── */}
+      <div
+        style={{
+          textAlign: "center",
+          padding: "0 14px",
+          marginTop: 6, // Reduced margin
+          zIndex: 10,
+          width: "100%",
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <p
+          style={{
+            fontSize: 11.5, // Reduced from 13
+            fontWeight: 900,
+            color: "#111",
+            fontFamily: "serif",
+            marginBottom: 4,
+            lineHeight: 1.2,
+          }}
+        >
+          IF FOUND, PLEASE RETURN TO
+        </p>
+        <p
+          style={{
+            fontSize: 10, // Reduced from 11
+            fontWeight: 900,
+            color: "#111",
+            fontFamily: "serif",
+            marginBottom: 4,
+            lineHeight: 1.2,
+          }}
+        >
+          QUAID-E-AZAM PUBLIC SEC SCHOOL
+        </p>
+        <p
+          style={{
+            fontSize: 7.5, // Reduced from 8.5
+            fontWeight: 700,
+            color: "#111",
+            fontFamily: "serif",
+            lineHeight: 1.4,
+            marginBottom: 8,
+          }}
+        >
+          PLOT NO # 22/STREET NO # 11, SECTOR C, QAYYUMABAD KARACHI
+        </p>
+        <p
+          style={{
+            fontSize: 11, // Reduced from 12.5
+            fontWeight: 900,
+            color: "#111",
+            fontFamily: "serif",
+            marginBottom: 10,
+          }}
+        >
+          CONTACT NO: 0308-2322242
+        </p>
+        <div
+          style={{
+            textAlign: "left",
+            fontSize: 7.5, // Reduced from 8.5
+            fontWeight: 700,
+            color: "#111",
+            fontFamily: "serif",
+            lineHeight: 1.5,
+            padding: "0 4px",
+            width: "100%",
+          }}
+        >
+          <p style={{ display: "flex", margin: 0, marginBottom: 2 }}>
+            <span style={{ marginRight: 5 }}>›</span>Card is required to enter the school premises.
+          </p>
+          <p style={{ display: "flex", margin: 0 }}>
+            <span style={{ marginRight: 5 }}>›</span>Display of card is mandatory while at school.
+          </p>
         </div>
       </div>
 
-      <ResponsiveText
-        maxSize={12}
-        minSize={9}
-        className="font-black text-black tracking-widest"
+      {/* ── Signature ── */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 26, // Raised slightly to clear the swoosh curve
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          zIndex: 20,
+        }}
       >
-        0308-2322242
-      </ResponsiveText>
-
-      <ul className="text-center w-full text-[9px] font-bold text-black space-y-0.5">
-        <li>• Card is required to enter school.</li>
-        <li>• Display of card is mandatory.</li>
-      </ul>
+        <img
+          src="/signature.png"
+          alt="Signature"
+          style={{ height: 32, objectFit: "contain", marginBottom: 2, mixBlendMode: "multiply" }} // Reduced from 40
+          onError={(e) => (e.currentTarget.style.display = "none")}
+        />
+        <div style={{ width: 110, borderBottom: "1.5px solid #111", marginBottom: 3 }} /> {/* Reduced from 130 */}
+        <span
+          style={{
+            fontSize: 7.5, // Reduced from 8.5
+            fontWeight: 800,
+            color: "#111",
+            fontFamily: "serif",
+            letterSpacing: 0.5,
+          }}
+        >
+          ISSUING AUTHORITY
+        </span>
+      </div>
     </div>
-
-    {/* Signature Section */}
-    <div className="mb-3 flex flex-col items-center relative z-20">
-      <img
-        src="/signature.png"
-        alt="Signature"
-        className="h-8 object-contain mb-0.5"
-      />
-
-      <div className="w-28 border-b-2 border-black mb-0.5"></div>
-      <span className="font-black text-[9px] uppercase tracking-wide text-black">
-        Issuing Authority
-      </span>
-    </div>
-  </CardBackground>
+  </div>
 );
+
 /* ═══════════════════════════════════════════════════════════
-   MAIN APP LOGIC
+   MAIN APP
    ═══════════════════════════════════════════════════════════ */
 export default function IdCardApp() {
   const [students, setStudents] = useState<StudentData[]>([]);
   const [isMirrored, setIsMirrored] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [currentPhoto, setCurrentPhoto] = useState<string>("");
+  const [form, setForm] = useState({ name: "", father: "", class: "", gr: "" });
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const PLACEHOLDER =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%23e8ede8'/%3E%3C/svg%3E";
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const preview = document.getElementById('photo-preview') as HTMLImageElement;
-        if (preview) preview.src = ev.target?.result as string;
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setCurrentPhoto(ev.target?.result as string);
+    reader.readAsDataURL(file);
   };
 
-  const handleAdd = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const photo = (document.getElementById('photo-preview') as HTMLImageElement)?.src || "";
+    if (!currentPhoto) { alert("Please upload a student photo."); return; }
+    if (!form.name || !form.gr) { alert("Please fill in Student Name and GR #."); return; }
 
-    // require an image before proceeding
-    if (!photo) return alert("Please upload a photo; the card cannot be processed without it.");
-
-    const newStudent: StudentData = {
-      name: fd.get('name') as string,
-      fatherName: fd.get('father') as string,
-      class: fd.get('class') as string,
-      grNumber: fd.get('gr') as string,
-      photo
+    const student: StudentData = {
+      name: form.name,
+      fatherName: form.father,
+      class: form.class,
+      grNumber: form.gr,
+      photo: currentPhoto,
     };
 
     if (editingIndex !== null) {
-      // update existing
       const updated = [...students];
-      updated[editingIndex] = newStudent;
+      updated[editingIndex] = student;
       setStudents(updated);
       setEditingIndex(null);
     } else {
-      if (students.length >= 5) return alert("Sheet is full! (Max 4 Students per page)");
-      setStudents([...students, newStudent]);
+      if (students.length >= 5) { alert("Sheet is full! Max 5 students per page."); return; }
+      setStudents([...students, student]);
     }
-
-    e.currentTarget.reset();
-    (document.getElementById('photo-preview') as HTMLImageElement).src = "";
+    setForm({ name: "", father: "", class: "", gr: "" });
+    setCurrentPhoto("");
   };
 
-  const handleEdit = (index: number) => {
-    const s = students[index];
-    const form = document.querySelector('form') as HTMLFormElement;
-    if (form) {
-      (form.elements.namedItem('name') as HTMLInputElement).value = s.name;
-      (form.elements.namedItem('father') as HTMLInputElement).value = s.fatherName;
-      (form.elements.namedItem('class') as HTMLInputElement).value = s.class;
-      (form.elements.namedItem('gr') as HTMLInputElement).value = s.grNumber;
-      const preview = document.getElementById('photo-preview') as HTMLImageElement;
-      if (preview) preview.src = s.photo;
-    }
-    setEditingIndex(index);
+  const handleEdit = (i: number) => {
+    const s = students[i];
+    setForm({ name: s.name, father: s.fatherName, class: s.class, gr: s.grNumber });
+    setCurrentPhoto(s.photo);
+    setEditingIndex(i);
   };
 
-  const handleDelete = (index: number) => {
-    const updated = students.filter((_, i) => i !== index);
-    setStudents(updated);
-    // if we were editing that one, cancel
-    if (editingIndex === index) setEditingIndex(null);
+  const handleDelete = (i: number) => {
+    setStudents(students.filter((_, idx) => idx !== i));
+    if (editingIndex === i) {
+      setEditingIndex(null);
+      setForm({ name: "", father: "", class: "", gr: "" });
+      setCurrentPhoto("");
+    }
+  };
+
+  const btnBase: React.CSSProperties = {
+    padding: "8px 14px",
+    borderRadius: 10,
+    fontWeight: 700,
+    fontSize: 12,
+    cursor: "pointer",
+    border: "none",
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 font-sans">
+    <>
+      <style>{`
+        * { box-sizing: border-box; }
+      `}</style>
 
-      {/* ──────────────────────────────────────────────────────────
-          INPUT UI (Visible on Screen)
-          ────────────────────────────────────────────────────────── */}
-      <div className="max-w-6xl mx-auto grid lg:grid-cols-3 gap-8 print:hidden">
-        <div className="lg:col-span-2">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-slate-800">Card Preview</h2>
-              <div className="flex gap-3">
+      <div style={{ minHeight: "100vh", background: "#f0f4f8", padding: 20, fontFamily: "sans-serif" }}>
 
-                {/* FLIP BUTTON */}
+        {/* ════════════════════════════════════════════════
+            SCREEN UI  (hidden on print via print:hidden)
+            ════════════════════════════════════════════════ */}
+        <div
+          className="print:hidden"
+          style={{
+            maxWidth: 1000,
+            margin: "0 auto",
+            display: "flex",
+            gap: 24,
+            flexWrap: "wrap",
+            justifyContent: "center",
+          }}
+        >
+          {/* ── Preview Panel ── */}
+          <div
+            style={{
+              background: "white",
+              borderRadius: 16,
+              padding: 24,
+              boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+              flex: 1,
+              minWidth: 480,
+            }}
+          >
+            {/* Top bar */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a2a1a", margin: 0 }}>Card Preview</h2>
+              <div style={{ display: "flex", gap: 8 }}>
                 <button
                   onClick={() => setIsMirrored(!isMirrored)}
-                  className={`px-4 py-2 rounded-xl font-bold border transition-all ${isMirrored ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-700 border-purple-200 hover:bg-purple-50'}`}
+                  style={{
+                    ...btnBase,
+                    border: "1.5px solid #7c3aed",
+                    background: isMirrored ? "#7c3aed" : "white",
+                    color: isMirrored ? "white" : "#7c3aed",
+                  }}
                 >
-                  {isMirrored ? "✅ Mirrored (Ready)" : "🔄 Flip for Print"}
+                  {isMirrored ? "✅ Mirrored" : "🔄 Flip for Print"}
                 </button>
-
-                <button onClick={() => window.print()} className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded-xl font-bold transition-all shadow-md">
+                <button
+                  onClick={() => window.print()}
+                  style={{ ...btnBase, background: "#1a3fa0", color: "white" }}
+                >
                   Print Sheet
                 </button>
-                <button onClick={() => setStudents([])} className="bg-slate-100 text-slate-600 px-6 py-2 rounded-xl font-bold hover:bg-slate-200">
+                <button
+                  onClick={() => setStudents([])}
+                  style={{ ...btnBase, background: "#f0f0f0", color: "#444" }}
+                >
                   Clear
                 </button>
               </div>
             </div>
 
-            {/* Visual Preview */}
-            <div className={`flex flex-wrap gap-4 bg-slate-100 p-8 rounded-xl border-2 border-dashed border-slate-300 justify-center transition-transform duration-300 ${isMirrored ? 'scale-x-[-1]' : ''}`}>
-              {students.length === 0 && <p className="text-slate-400 italic w-full text-center scale-x-100">No students added. Add up to 4 students.</p>}
+            {/* Cards area */}
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 16,
+                justifyContent: "center",
+                background: "#dde8dd",
+                padding: 20,
+                borderRadius: 12,
+                minHeight: 160,
+                alignItems: "flex-start",
+                transform: isMirrored ? "scaleX(-1)" : "none",
+                transition: "transform 0.3s",
+              }}
+            >
+              {students.length === 0 && (
+                <p
+                  style={{
+                    color: "#aaa",
+                    fontSize: 13,
+                    textAlign: "center",
+                    padding: "40px 0",
+                    width: "100%",
+                  }}
+                >
+                  No students added. Add up to 5 students.
+                </p>
+              )}
               {students.map((s, i) => (
-                <div key={i} className="relative flex gap-2 scale-75 origin-top">
-                  {/* overlay controls */}
-                  <div className="absolute top-0 right-0 flex space-x-1 z-40">
+                <div key={i} style={{ position: "relative", display: "flex", gap: 8 }}>
+                  {/* Edit / Delete */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: -10,
+                      right: -10,
+                      display: "flex",
+                      gap: 4,
+                      zIndex: 50,
+                    }}
+                  >
                     <button
                       onClick={() => handleEdit(i)}
-                      className="text-xs bg-white rounded-full p-1 shadow hover:bg-gray-100"
                       title="Edit"
-                    >✏️</button>
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: "50%",
+                        border: "1px solid #ddd",
+                        background: "white",
+                        cursor: "pointer",
+                        fontSize: 11,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
+                      }}
+                    >
+                      ✏️
+                    </button>
                     <button
                       onClick={() => handleDelete(i)}
-                      className="text-xs bg-white rounded-full p-1 shadow hover:bg-gray-100"
                       title="Delete"
-                    >🗑️</button>
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: "50%",
+                        border: "1px solid #ddd",
+                        background: "white",
+                        cursor: "pointer",
+                        fontSize: 11,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
+                      }}
+                    >
+                      🗑️
+                    </button>
                   </div>
                   <IdCardFront student={s} />
                   <IdCardBack />
                 </div>
               ))}
             </div>
-            {isMirrored && <p className="text-center text-purple-600 font-bold mt-2 animate-pulse">Preview is mirrored. Press Print now.</p>}
+
+            {isMirrored && (
+              <p style={{ textAlign: "center", color: "#7c3aed", fontWeight: 700, marginTop: 8 }}>
+                Preview is mirrored. Press Print now.
+              </p>
+            )}
           </div>
-        </div>
 
-        {/* Form - Clearer & Centralized Inputs */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit sticky top-4">
-          <h3 className="text-xl font-bold mb-4 text-slate-800 text-center">Add Student Details</h3>
-          <form onSubmit={handleAdd} className="space-y-4">
-            <div className="flex justify-center mb-4">
-              <img id="photo-preview" className="w-28 h-28 rounded-full border-4 border-blue-200 object-cover bg-slate-50" src="" alt="Preview" />
+          {/* ── Form Panel ── */}
+          <div
+            style={{
+              background: "white",
+              borderRadius: 16,
+              padding: 24,
+              boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+              width: 270,
+              height: "fit-content",
+              position: "sticky",
+              top: 16,
+            }}
+          >
+            <h3
+              style={{
+                fontSize: 15,
+                fontWeight: 700,
+                color: "#1a2a1a",
+                marginBottom: 14,
+                textAlign: "center",
+                margin: "0 0 14px",
+              }}
+            >
+              Add Student Details
+            </h3>
+
+            {/* Photo preview */}
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
+              <img
+                src={currentPhoto || PLACEHOLDER}
+                alt="Preview"
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  border: "3px solid #1a5c2a",
+                }}
+              />
             </div>
 
-            <input name="name" placeholder="Student Name" required className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none text-center font-bold text-lg" />
-            <input name="father" placeholder="Father's Name" required className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none text-center font-bold text-lg" />
+            <form
+              onSubmit={handleSubmit}
+              style={{ display: "flex", flexDirection: "column", gap: 8 }}
+            >
+              {(["name", "father"] as const).map((field) => (
+                <input
+                  key={field}
+                  type="text"
+                  placeholder={field === "name" ? "Student Name" : "Father's Name"}
+                  value={form[field]}
+                  onChange={(e) => setForm({ ...form, [field]: e.target.value })}
+                  required={field === "name"}
+                  style={{
+                    width: "100%",
+                    padding: "9px 12px",
+                    border: "1.5px solid #c8d8c0",
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "#1a2a1a",
+                    background: "#f8fcf4",
+                    textAlign: "center",
+                    outline: "none",
+                  }}
+                />
+              ))}
 
-            <div className="grid grid-cols-2 gap-3">
-              <input name="class" placeholder="Class (optional)" className="p-3 bg-slate-50 border border-slate-300 rounded-xl outline-none text-center font-bold" />
-              <input name="gr" placeholder="GR #" required className="p-3 bg-slate-50 border border-slate-300 rounded-xl outline-none text-center font-bold" />
-            </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                <input
+                  type="text"
+                  placeholder="Class"
+                  value={form.class}
+                  onChange={(e) => setForm({ ...form, class: e.target.value })}
+                  style={{
+                    padding: "9px 8px",
+                    border: "1.5px solid #c8d8c0",
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "#1a2a1a",
+                    background: "#f8fcf4",
+                    textAlign: "center",
+                    outline: "none",
+                  }}
+                />
+                <input
+                  type="text"
+                  placeholder="GR #"
+                  value={form.gr}
+                  onChange={(e) => setForm({ ...form, gr: e.target.value })}
+                  required
+                  style={{
+                    padding: "9px 8px",
+                    border: "1.5px solid #c8d8c0",
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "#1a2a1a",
+                    background: "#f8fcf4",
+                    textAlign: "center",
+                    outline: "none",
+                  }}
+                />
+              </div>
 
-            <input type="file" onChange={handleFileUpload} className="text-sm block w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-200 file:text-blue-800 hover:file:bg-blue-300 transition-all cursor-pointer" />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                style={{ fontSize: 11, color: "#666", cursor: "pointer" }}
+              />
 
-            <div className="flex flex-col gap-2">
-              <button type="submit" className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-black transition-all shadow-lg text-lg">
-                {editingIndex !== null ? 'Update Entry' : 'Add to Print List'}
+              <button
+                type="submit"
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  background: "#1a5c2a",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 10,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                {editingIndex !== null ? "Update Entry" : "Add to Print List"}
               </button>
+
               {editingIndex !== null && (
                 <button
                   type="button"
                   onClick={() => {
-                    const form = document.querySelector('form') as HTMLFormElement;
-                    if (form) form.reset();
-                    (document.getElementById('photo-preview') as HTMLImageElement).src = "";
                     setEditingIndex(null);
+                    setForm({ name: "", father: "", class: "", gr: "" });
+                    setCurrentPhoto("");
                   }}
-                  className="w-full bg-gray-200 text-gray-800 py-3 rounded-xl font-bold hover:bg-gray-300 transition-all shadow-inner text-lg"
+                  style={{
+                    width: "100%",
+                    padding: 10,
+                    background: "#f0f0f0",
+                    color: "#444",
+                    border: "none",
+                    borderRadius: 10,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
                 >
                   Cancel Edit
                 </button>
               )}
-            </div>
-            <p className="text-xs text-center text-gray-400 font-semibold">Cards Added: {students.length}/4</p>
-          </form>
+
+              <p style={{ textAlign: "center", fontSize: 11, color: "#888", margin: 0 }}>
+                Cards Added: {students.length}/5
+              </p>
+            </form>
+          </div>
+        </div>
+
+        {/* ════════════════════════════════════════════════
+            PRINT LAYOUT  — uses .a4-print-container from global.css
+            Row 1: all fronts  |  Row 2: all backs
+            ════════════════════════════════════════════════ */}
+        <div className="hidden print:block">
+          <div className={`a4-print-container ${isMirrored ? "mirror-mode" : ""}`}>
+
+            {/* ROW 1 — Fronts */}
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div className="print-card-wrapper" key={`front-${i}`}>
+                {students[i] ? (
+                  <IdCardFront student={students[i]} />
+                ) : (
+                  <div className="id-card" style={{ border: "none", background: "transparent", boxShadow: "none" }} />
+                )}
+              </div>
+            ))}
+
+            {/* ROW 2 — Backs */}
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div className="print-card-wrapper" key={`back-${i}`}>
+                {students[i] ? (
+                  <IdCardBack />
+                ) : (
+                  <div className="id-card" style={{ border: "none", background: "transparent", boxShadow: "none" }} />
+                )}
+              </div>
+            ))}
+
+          </div>
         </div>
       </div>
-
-      {/* ──────────────────────────────────────────────────────────
-          PRINT LAYOUT
-          ────────────────────────────────────────────────────────── */}
-      <div className="hidden print:block">
-        {/* The 'mirror-mode' class here ensures the print output is also flipped */}
-        <div className={`a4-print-container ${isMirrored ? 'mirror-mode' : ''}`}>
-
-          {/* ROW 1: FRONTS */}
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div className="print-card-wrapper" key={`front-${i}`}>
-              {students[i] ? <IdCardFront student={students[i]} /> : <div className="id-card" style={{ border: 'none' }} />}
-            </div>
-          ))}
-
-          {/* ROW 2: BACKS */}
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div className="print-card-wrapper" key={`back-${i}`}>
-              {students[i] ? <IdCardBack /> : <div className="id-card" style={{ border: 'none' }} />}
-            </div>
-          ))}
-
-        </div>
-      </div>
-    </div>
+    </>
   );
 }
